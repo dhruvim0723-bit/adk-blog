@@ -1,9 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Q
 from .models import Post, Category
 
 
 def post_list(request):
     category_slug = request.GET.get('category')
+    query = request.GET.get('q', '').strip()
     categories = Category.objects.all()
     posts = Post.objects.filter(status='published')
 
@@ -12,10 +14,16 @@ def post_list(request):
         active_category = get_object_or_404(Category, slug=category_slug)
         posts = posts.filter(category=active_category)
 
+    if query:
+        posts = posts.filter(
+            Q(title__icontains=query) | Q(content__icontains=query)
+        )
+
     return render(request, 'blog/post_list.html', {
         'posts': posts,
         'categories': categories,
         'active_category': active_category,
+        'query': query,
     })
 
 
